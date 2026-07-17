@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Social Media Post Composer</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-tertiary: #1c2128;
+      --text-primary: #e6edf3; --text-secondary: #8b949e; --accent-primary: #58a6ff;
+      --border-color: #30363d; --error-color: #f85149; --warning-color: #d29922;
+      --success-color: #3fb950; --twitter-color: #1da1f2; --instagram-color: #e4405f;
+      --linkedin-color: #0077b5; --facebook-color: #1877f2;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+      color: var(--text-primary); min-height: 100vh; padding: 2rem 1rem;
+    }
+    .app-container { max-width: 1400px; margin: 0 auto; }
+    .app-header { text-align: center; margin-bottom: 2rem; }
+    .app-title {
+      font-size: 2.5rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-primary), #a371f7);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;
+    }
+    .app-subtitle { color: var(--text-secondary); font-size: 1.1rem; }
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } }
+    .panel { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; }
+    .section-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); }
+    .composer-textarea {
+      width: 100%; min-height: 150px; padding: 1rem; background: var(--bg-tertiary);
+      border: 2px solid var(--border-color); border-radius: 8px; color: var(--text-primary);
+      font-size: 1rem; font-family: inherit; resize: vertical; transition: border-color 0.2s;
+    }
+    .composer-textarea:focus { outline: none; border-color: var(--accent-primary); }
+    .emoji-bar { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 6px; }
+    .emoji-list { display: flex; gap: 0.25rem; }
+    .emoji-btn { background: none; border: none; font-size: 1.25rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: background 0.2s; }
+    .emoji-btn:hover { background: var(--bg-secondary); }
+    .media-dropzone {
+      margin-top: 1rem; padding: 2rem; border: 2px dashed var(--border-color);
+      border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s;
+    }
+    .media-dropzone:hover, .media-dropzone.drag-over { border-color: var(--accent-primary); background: var(--bg-tertiary); }
+    .media-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+    .media-preview-card { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
+    .media-thumb { width: 100%; height: 100%; object-fit: cover; }
+    .remove-media-btn {
+      position: absolute; top: 4px; right: 4px; background: rgba(0, 0, 0, 0.7); border: none;
+      border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; color: white; transition: background 0.2s;
+    }
+    .remove-media-btn:hover { background: var(--error-color); }
+    .platforms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .platform-btn {
+      padding: 1rem; background: var(--bg-tertiary); border: 2px solid var(--border-color);
+      border-radius: 8px; cursor: pointer; transition: all 0.2s; position: relative;
+    }
+    .platform-btn:hover { border-color: var(--platform-color); transform: translateY(-2px); }
+    .platform-btn.selected { border-color: var(--platform-color); background: var(--bg-secondary); box-shadow: 0 0 20px var(--platform-color)33; }
+    .platform-btn.has-error { border-color: var(--error-color); }
+    .platform-btn-content { display: flex; align-items: center; gap: 0.5rem; justify-content: center; }
+    .platform-icon { color: var(--platform-color); }
+    .platform-name { font-weight: 600; color: var(--text-primary); }
+    .status-badge-container { position: absolute; top: 8px; right: 8px; }
+    .preview-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; overflow-x: auto; }
+    .preview-tab-btn {
+      padding: 0.5rem 1rem; background: var(--bg-tertiary); border: 2px solid var(--border-color);
+      border-radius: 6px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .preview-tab-btn.active { border-color: var(--tab-color); background: var(--bg-secondary); color: var(--text-primary); font-weight: 600; }
+    .mockup-container { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; max-width: 600px; margin: 0 auto; }
+    .mockup-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .mockup-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-primary), #a371f7);
+      display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.25rem;
+    }
+    .mockup-avatar.rect { border-radius: 4px; }
+    .mockup-user-info { flex: 1; }
+    .mockup-display-name { font-weight: 600; font-size: 0.95rem; }
+    .mockup-username { color: var(--text-secondary); font-size: 0.85rem; }
+    .preview-text-content { margin-bottom: 1rem; line-height: 1.5; color: var(--text-primary); }
+    .preview-hashtag { color: var(--accent-primary); font-weight: 500; }
+    .media-grid { margin-top: 1rem; border-radius: 8px; overflow: hidden; }
+    .media-grid.grid-1 { display: grid; }
+    .media-grid.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+    .media-grid.grid-3 { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+    .media-grid.grid-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+    .preview-media-item { width: 100%; height: 200px; object-fit: cover; background: var(--bg-tertiary); }
+    .media-grid-larger { grid-row: span 2; }
+    .media-grid-more-wrapper { position: relative; }
+    .media-grid-more-overlay {
+      position: absolute; inset: 0; background: rgba(0, 0, 0, 0.7);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; font-weight: bold; color: white;
+    }
+    .mockup-actions { display: flex; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+    .action-btn {
+      display: flex; align-items: center; gap: 0.25rem; background: none; border: none;
+      color: var(--text-secondary); cursor: pointer; font-size: 0.85rem;
+      padding: 0.25rem 0.5rem; border-radius: 4px; transition: all 0.2s;
+    }
+    .action-btn:hover { background: var(--bg-secondary); }
+    .validation-list { display: flex; flex-direction: column; gap: 1rem; }
+    .platform-validation-card { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; }
+    .platform-validation-card.invalid { border-color: var(--error-color); }
+    .validation-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .platform-pill { padding: 0.25rem 0.75rem; border-radius: 12px; color: white; font-size: 0.85rem; font-weight: 600; }
+    .status-pill {
+      padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem;
+      font-weight: 600; display: flex; align-items: center; gap: 0.25rem;
+    }
+    .status-pill.ok { background: var(--success-color)33; color: var(--success-color); }
+    .status-pill.err { background: var(--error-color)33; color: var(--error-color); }
+    .metric-progress-bg { height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; margin-top: 0.5rem; }
+    .metric-progress-bar { height: 100%; border-radius: 3px; transition: all 0.3s; }
+    .metric-count { font-weight: 600; font-size: 0.9rem; }
+    .metric-count.over { color: var(--error-color); }
+    .metric-count.near { color: var(--warning-color); }
+    .feedback-messages { margin-top: 0.75rem; }
+    .msg-item {
+      display: flex; align-items: flex-start; gap: 0.5rem;
+      padding: 0.5rem; border-radius: 4px; font-size: 0.85rem; margin-bottom: 0.25rem;
+    }
+    .msg-item.error-msg { background: var(--error-color)22; color: var(--error-color); }
+    .msg-item.warning-msg { background: var(--warning-color)22; color: var(--warning-color); }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); }
+    .animate-fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const { X, UploadCloud, Smile, Heart, MessageCircle, Share2, Bookmark, Repeat, MoreHorizontal, Globe, Send, ThumbsUp, Check, AlertCircle, AlertTriangle, Info } = lucide;
+    const PLATFORMS = {
+      twitter: { id: 'twitter', name: 'Twitter', color: '#1da1f2', charLimit: 280, maxMedia: 4, hashtagLimit: null, warnLimit: 260, mediaRequired: false },
+      instagram: { id: 'instagram', name: 'Instagram', color: '#e4405f', charLimit: 2200, maxMedia: 10, hashtagLimit: 30, warnLimit: 2000, mediaRequired: true },
+      linkedin: { id: 'linkedin', name: 'LinkedIn', color: '#0077b5', charLimit: 3000, maxMedia: 9, hashtagLimit: null, warnLimit: 2800, mediaRequired: false },
+      facebook: { id: 'facebook', name: 'Facebook', color: '#1877f2', charLimit: 63206, maxMedia: 10, hashtagLimit: null, warnLimit: 5000, mediaRequired: false }
+    };
+    function validatePost(text, mediaFiles, platform) {
+      const config = PLATFORMS[platform];
+      const errors = []; const warnings = [];
+      const charCount = text.length; const mediaCount = mediaFiles.length;
+      const hashtags = (text.match(/#\w+/g) || []); const hashtagCount = hashtags.length;
+      if (charCount > config.charLimit) errors.push(`Character limit exceeded (${charCount}/${config.charLimit})`);
+      if (mediaCount > config.maxMedia) errors.push(`Too many media files (${mediaCount}/${config.maxMedia})`);
+      if (config.mediaRequired && mediaCount === 0) errors.push('At least one media file is required');
+      if (config.hashtagLimit && hashtagCount > config.hashtagLimit) errors.push(`Too many hashtags (${hashtagCount}/${config.hashtagLimit})`);
+      if (charCount >= config.warnLimit && charCount <= config.charLimit) warnings.push('Approaching character limit');
+      return { isValid: errors.length === 0, errors, warnings, charCount, mediaCount, hashtagCount, charLimit: config.charLimit, maxMedia: config.maxMedia, hashtagLimit: config.hashtagLimit };
+    }
+    function Composer({ text, setText, mediaFiles, setMediaFiles, activePlatformConfig }) {
+      const fileInputRef = useRef(null);
+      const [isDragOver, setIsDragOver] = useState(false);
+      const handleTextChange = (e) => setText(e.target.value);
+      const handleFileChange = (e) => { if (e.target.files) addFiles(Array.from(e.target.files)); };
+      const addFiles = (files) => {
+        const newMedia = files.map(file => ({
+          id: Math.random().toString(36).substring(2, 9),
+          url: URL.createObjectURL(file), file,
+          type: file.type.startsWith('video/') ? 'video' : 'image',
+          name: file.name, size: (file.size / 1024 / 1024).toFixed(2) + ' MB'
+        }));
+        setMediaFiles(prev => [...prev, ...newMedia]);
+      };
+      const removeMedia = (id) => {
+        setMediaFiles(prev => {
+          const fileToRemove = prev.find(item => item.id === id);
+          if (fileToRemove) URL.revokeObjectURL(fileToRemove.url);
+          return prev.filter(item => item.id !== id);
+        });
+      };
+      const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
+      const handleDragLeave = () => setIsDragOver(false);
+      const handleDrop = (e) => {
+        e.preventDefault(); setIsDragOver(false);
+        if (e.dataTransfer.files) addFiles(Array.from(e.dataTransfer.files));
+      };
+      const insertEmoji = (emoji) => setText(prev => prev + emoji);
+      const commonEmojis = ['😊', '❤️', '🔥', '👍', '🎉', '✨', '🚀', '💡', '📸', '🎯'];
+      return (
+        <div className="composer-container animate-fade-in">
+          <h3 className="section-title">Compose Post</h3>
+          <textarea value={text} onChange={handleTextChange} placeholder="What would you like to share?" className="composer-textarea" rows="6" />
+          <div className="emoji-bar">
+            <Smile size={16} />
+            <div className="emoji-list">
+              {commonEmojis.map(emoji => <button key={emoji} onClick={() => insertEmoji(emoji)} className="emoji-btn">{emoji}</button>)}
+            </div>
+          </div>
+          <div className={`media-dropzone ${isDragOver ? 'drag-over' : ''}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()}>
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="image/*,video/*" style={{ display: 'none' }} />
+            <UploadCloud size={24} />
+            <p><span>Drag & drop media</span> or <strong>browse files</strong></p>
+          </div>
+          {mediaFiles.length > 0 && (
+            <div className="media-preview-grid">
+              {mediaFiles.map(media => (
+                <div key={media.id} className="media-preview-card">
+                  {media.type === 'video' ? <video src={media.url} className="media-thumb" muted playsInline /> : <img src={media.url} className="media-thumb" />}
+                  <button onClick={(e) => { e.stopPropagation(); removeMedia(media.id); }} className="remove-media-btn"><X size={12} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    function PlatformSelector({ selectedPlatforms, validationResults, togglePlatform }) {
+      const icons = {
+        twitter: () => <svg width="18" height="18" fill="currentColor"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>,
+        instagram: () => <svg width="18" height="18" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg>,
+        linkedin: () => <svg width="18" height="18" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>,
+        facebook: () => <svg width="18" height="18" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+      };
+      return (
+        <div><h3 className="section-title">Publish to</h3><div className="platforms-grid">
+          {Object.values(PLATFORMS).map(platform => {
+            const isSelected = selectedPlatforms.includes(platform.id);
+            const validation = validationResults[platform.id];
+            const Icon = icons[platform.id];
+            let statusIcon = null, statusClass = '';
+            if (isSelected && validation) {
+              if (!validation.isValid) { statusIcon = <AlertCircle size={14} />; statusClass = 'has-error'; }
+              else if (validation.warnings.length > 0) { statusIcon = <AlertTriangle size={14} />; statusClass = 'has-warning'; }
+              else { statusIcon = <Check size={14} />; statusClass = 'has-ok'; }
+            }
+            return (
+              <button key={platform.id} onClick={() => togglePlatform(platform.id)} className={`platform-btn ${isSelected ? 'selected' : ''} ${statusClass}`} style={{ '--platform-color': platform.color }}>
+                <div className="platform-btn-content"><Icon /><span className="platform-name">{platform.name}</span></div>
+                {isSelected && <div className="status-badge-container">{statusIcon}</div>}
+              </button>
+            );
+          })}
+        </div></div>
+      );
+    }
+    function PreviewPanel({ selectedPlatforms, text, mediaFiles }) {
+      const [activePreviewTab, setActivePreviewTab] = useState('');
+      useEffect(() => {
+        if (selectedPlatforms.length > 0) {
+          if (!selectedPlatforms.includes(activePreviewTab)) setActivePreviewTab(selectedPlatforms[0]);
+        } else setActivePreviewTab('');
+      }, [selectedPlatforms, activePreviewTab]);
+      if (selectedPlatforms.length === 0) return (
+        <div className="preview-panel empty-state">
+          <Globe size={40} /><h3>Live Mockup Preview</h3><p>Select platforms to see how your post will render.</p>
+        </div>
+      );
+      const renderFormattedText = (text) => {
+        if (!text) return <p className="empty-preview-text">Write some content...</p>;
+        const parts = text.split(/(#\w+)/g);
+        return <p className="preview-text-content">{parts.map((part, i) => part.match(/#\w+/) ? <span key={i} className="preview-hashtag">{part}</span> : part)}</p>;
+      };
+      const renderMediaGrid = (files) => {
+        if (files.length === 0) return null;
+        const count = files.length;
+        const renderFile = (file, className = 'preview-media-item') => file.type === 'video' ? <video key={file.id} src={file.url} className={className} controls muted /> : <img key={file.id} src={file.url} className={className} />;
+        if (count === 1) return <div className="media-grid grid-1">{renderFile(files[0])}</div>;
+        if (count === 2) return <div className="media-grid grid-2">{renderFile(files[0])}{renderFile(files[1])}</div>;
+        if (count >= 3) return <div className="media-grid grid-3"><div className="media-grid-larger">{renderFile(files[0])}</div><div>{renderFile(files[1])}{renderFile(files[2])}</div></div>;
+        return null;
+      };
+      return (
+        <div className="preview-panel animate-fade-in">
+          <h3 className="section-title">Live Preview</h3>
+          <div className="preview-tabs">
+            {selectedPlatforms.map(platformId => {
+              const config = PLATFORMS[platformId];
+              return <button key={platformId} onClick={() => setActivePreviewTab(platformId)} className={`preview-tab-btn ${activePreviewTab === platformId ? 'active' : ''}`} style={{ '--tab-color': config.color }}>{config.name}</button>;
+            })}
+          </div>
+          <div className="preview-body">
+            {activePreviewTab === 'twitter' && (
+              <div className="mockup-container">
+                <div className="mockup-header">
+                  <div className="mockup-avatar">P</div>
+                  <div className="mockup-user-info">
+                    <span className="mockup-display-name">Post Composer</span>
+                    <span className="mockup-username">@composer · Now</span>
+                  </div>
+                  <MoreHorizontal size={16} />
+                </div>
+                <div>{renderFormattedText(text)}{renderMediaGrid(mediaFiles.slice(0, 4))}</div>
+                <div className="mockup-actions">
+                  <button className="action-btn"><MessageCircle size={14} /> 0</button>
+                  <button className="action-btn"><Repeat size={14} /> 0</button>
+                  <button className="action-btn"><Heart size={14} /> 0</button>
+                  <button className="action-btn"><Share2 size={14} /></button>
+                </div>
+              </div>
+            )}
+            {activePreviewTab === 'instagram' && (
+              <div className="mockup-container">
+                <div className="mockup-header">
+                  <div className="mockup-avatar">P</div>
+                  <span className="mockup-display-name">@postcomposer</span>
+                  <MoreHorizontal size={16} />
+                </div>
+                <div>{mediaFiles.length > 0 ? renderMediaGrid(mediaFiles.slice(0, 10)) : <p>Instagram requires at least one photo or video.</p>}</div>
+                <div className="mockup-actions"><div><Heart size={18} /><MessageCircle size={18} /><Send size={18} /></div><Bookmark size={18} /></div>
+                <div>{renderFormattedText(text)}</div>
+              </div>
+            )}
+            {activePreviewTab === 'linkedin' && (
+              <div className="mockup-container">
+                <div className="mockup-header">
+                  <div className="mockup-avatar rect">P</div>
+                  <div className="mockup-user-info">
+                    <span className="mockup-display-name">Post Composer Pro</span>
+                    <span className="mockup-username">Just now</span>
+                  </div>
+                  <MoreHorizontal size={16} />
+                </div>
+                <div>{renderFormattedText(text)}</div>
+                {mediaFiles.length > 0 && <div>{renderMediaGrid(mediaFiles.slice(0, 9))}</div>}
+                <div className="mockup-actions">
+                  <button className="action-btn"><ThumbsUp size={15} /> Like</button>
+                  <button className="action-btn"><MessageCircle size={15} /> Comment</button>
+                  <button className="action-btn"><Repeat size={15} /> Repost</button>
+                  <button className="action-btn"><Send size={15} /> Send</button>
+                </div>
+              </div>
+            )}
+            {activePreviewTab === 'facebook' && (
+              <div className="mockup-container">
+                <div className="mockup-header">
+                  <div className="mockup-avatar">P</div>
+                  <div className="mockup-user-info">
+                    <span className="mockup-display-name">Post Composer</span>
+                    <span className="mockup-username">Just now</span>
+                  </div>
+                  <MoreHorizontal size={16} />
+                </div>
+                <div>{renderFormattedText(text)}</div>
+                {mediaFiles.length > 0 && <div>{renderMediaGrid(mediaFiles.slice(0, 10))}</div>}
+                <div className="mockup-actions">
+                  <button className="action-btn"><ThumbsUp size={15} /> Like</button>
+                  <button className="action-btn"><MessageCircle size={15} /> Comment</button>
+                  <button className="action-btn"><Share2 size={15} /> Share</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+    function ValidationFeedback({ selectedPlatforms, validationResults }) {
+      if (selectedPlatforms.length === 0) return <div className="validation-panel empty-state"><Info size={20} /><p>Select platforms to view validation.</p></div>;
+      return (
+        <div className="validation-panel animate-fade-in">
+          <h3 className="section-title">Validation Details</h3>
+          <div className="validation-list">
+            {selectedPlatforms.map(platformId => {
+              const config = PLATFORMS[platformId];
+              const result = validationResults[platformId];
+              if (!result) return null;
+              const { isValid, errors, warnings, charCount, mediaCount, hashtagCount, charLimit, maxMedia, hashtagLimit } = result;
+              const charPercent = Math.min((charCount / charLimit) * 100, 100);
+              const isOverLimit = charCount > charLimit;
+              const isNearLimit = charCount >= config.warnLimit && charCount <= charLimit;
+              let progressColor = 'var(--accent-primary)';
+              if (isOverLimit) progressColor = 'var(--error-color)';
+              else if (isNearLimit) progressColor = 'var(--warning-color)';
+              return (
+                <div key={platformId} className={`platform-validation-card ${isValid ? 'valid' : 'invalid'}`}>
+                  <div className="validation-card-header">
+                    <span className="platform-pill" style={{ backgroundColor: config.color }}>{config.name}</span>
+                    <span className={`status-pill ${isValid ? 'ok' : 'err'}`}>{isValid ? <Check size={12} /> : <X size={12} />} {isValid ? 'Valid' : 'Invalid'}</span>
+                  </div>
+                  <div>
+                    <div><span>Characters</span> <span className={`metric-count ${isOverLimit ? 'over' : isNearLimit ? 'near' : ''}`}>{charCount} / {charLimit}</span></div>
+                    <div className="metric-progress-bg"><div className="metric-progress-bar" style={{ width: `${charPercent}%`, backgroundColor: progressColor }} /></div>
+                    <div><span>Media: {mediaCount} / {maxMedia}</span></div>
+                    {hashtagLimit && <div><span>Hashtags: {hashtagCount} / {hashtagLimit}</span></div>}
+                  </div>
+                  {(errors.length > 0 || warnings.length > 0) && (
+                    <div className="feedback-messages">
+                      {errors.map((err, idx) => <div key={`err-${idx}`} className="msg-item error-msg"><X size={12} /> {err}</div>)}
+                      {warnings.map((warn, idx) => <div key={`warn-${idx}`} className="msg-item warning-msg"><AlertTriangle size={12} /> {warn}</div>)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    function App() {
+      const [text, setText] = useState('');
+      const [mediaFiles, setMediaFiles] = useState([]);
+      const [selectedPlatforms, setSelectedPlatforms] = useState([]);
+      const [validationResults, setValidationResults] = useState({});
+      useEffect(() => {
+        const results = {};
+        selectedPlatforms.forEach(platformId => { results[platformId] = validatePost(text, mediaFiles, platformId); });
+        setValidationResults(results);
+      }, [text, mediaFiles, selectedPlatforms]);
+      const togglePlatform = (platformId) => {
+        setSelectedPlatforms(prev => prev.includes(platformId) ? prev.filter(id => id !== platformId) : [...prev, platformId]);
+      };
+      const activePlatformConfig = selectedPlatforms.length > 0 ? PLATFORMS[selectedPlatforms[0]] : null;
+      return (
+        <div className="app-container">
+          <div className="app-header">
+            <h1 className="app-title">Social Media Post Composer</h1>
+            <p className="app-subtitle">Create, preview, and validate posts across multiple platforms</p>
+          </div>
+          <div className="main-grid">
+            <div>
+              <div className="panel"><Composer text={text} setText={setText} mediaFiles={mediaFiles} setMediaFiles={setMediaFiles} activePlatformConfig={activePlatformConfig} /></div>
+              <div className="panel" style={{ marginTop: '2rem' }}><PlatformSelector selectedPlatforms={selectedPlatforms} validationResults={validationResults} togglePlatform={togglePlatform} /></div>
+              <div className="panel" style={{ marginTop: '2rem' }}><ValidationFeedback selectedPlatforms={selectedPlatforms} validationResults={validationResults} /></div>
+            </div>
+            <div><div className="panel"><PreviewPanel selectedPlatforms={selectedPlatforms} text={text} mediaFiles={mediaFiles} /></div></div>
+          </div>
+        </div>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
