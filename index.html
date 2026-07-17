@@ -1,306 +1,439 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Social Media Post Composer</title>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-tertiary: #1c2128;
-      --text-primary: #e6edf3; --text-secondary: #8b949e; --accent-primary: #58a6ff;
-      --border-color: #30363d; --error-color: #f85149; --warning-color: #d29922;
-      --success-color: #3fb950;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-      color: var(--text-primary); min-height: 100vh; padding: 2rem 1rem;
-    }
-    .app-container { max-width: 1400px; margin: 0 auto; }
-    .app-header { text-align: center; margin-bottom: 2rem; }
-    .app-title {
-      font-size: 2.5rem; font-weight: 700;
-      background: linear-gradient(135deg, var(--accent-primary), #a371f7);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;
-    }
-    .app-subtitle { color: var(--text-secondary); font-size: 1.1rem; }
-    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-    @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } }
-    .panel { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .section-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); }
-    .composer-textarea {
-      width: 100%; min-height: 150px; padding: 1rem; background: var(--bg-tertiary);
-      border: 2px solid var(--border-color); border-radius: 8px; color: var(--text-primary);
-      font-size: 1rem; font-family: inherit; resize: vertical; transition: border-color 0.2s;
-    }
-    .composer-textarea:focus { outline: none; border-color: var(--accent-primary); }
-    .emoji-bar { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 6px; }
-    .emoji-list { display: flex; gap: 0.25rem; }
-    .emoji-btn { background: none; border: none; font-size: 1.25rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: background 0.2s; }
-    .emoji-btn:hover { background: var(--bg-secondary); }
-    .media-dropzone {
-      margin-top: 1rem; padding: 2rem; border: 2px dashed var(--border-color);
-      border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s;
-    }
-    .media-dropzone:hover { border-color: var(--accent-primary); background: var(--bg-tertiary); }
-    .platforms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 1rem; }
-    .platform-btn {
-      padding: 1rem; background: var(--bg-tertiary); border: 2px solid var(--border-color);
-      border-radius: 8px; cursor: pointer; transition: all 0.2s; position: relative; text-align: center;
-    }
-    .platform-btn:hover { border-color: var(--platform-color); transform: translateY(-2px); }
-    .platform-btn.selected { border-color: var(--platform-color); background: var(--bg-secondary); box-shadow: 0 0 20px var(--platform-color)33; }
-    .platform-name { font-weight: 600; color: var(--text-primary); }
-    .status-badge { position: absolute; top: 8px; right: 8px; font-size: 0.75rem; }
-    .mockup-container { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; max-width: 600px; margin: 0 auto 1rem; }
-    .mockup-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
-    .mockup-avatar {
-      width: 40px; height: 40px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent-primary), #a371f7);
-      display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.25rem;
-    }
-    .mockup-user-info { flex: 1; }
-    .mockup-display-name { font-weight: 600; font-size: 0.95rem; }
-    .mockup-username { color: var(--text-secondary); font-size: 0.85rem; }
-    .preview-text-content { margin-bottom: 1rem; line-height: 1.5; color: var(--text-primary); }
-    .preview-hashtag { color: var(--accent-primary); font-weight: 500; }
-    .mockup-actions { display: flex; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
-    .action-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; padding: 0.25rem 0.5rem; border-radius: 4px; }
-    .validation-card { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
-    .validation-card.invalid { border-color: var(--error-color); }
-    .platform-pill { padding: 0.25rem 0.75rem; border-radius: 12px; color: white; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-bottom: 0.5rem; }
-    .metric-count { font-weight: 600; }
-    .metric-count.over { color: var(--error-color); }
-    .metric-count.near { color: var(--warning-color); }
-    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniPost Composer</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #1c2128;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --border-color: #30363d;
+            --accent-primary: #58a6ff;
+            --accent-hover: #1f6feb;
+            --error: #f85149;
+            --warning: #d29922;
+            --success: #3fb950;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        
+        .app-container { max-width: 1400px; margin: 0 auto; }
+        
+        .app-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .app-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), #a371f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        
+        .app-title::before {
+            content: '✨ ';
+        }
+        
+        .app-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+        
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .platforms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 2rem;
+        }
+        
+        .platform-btn {
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            text-align: center;
+        }
+        
+        .platform-btn:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-tertiary);
+            transform: translateY(-2px);
+        }
+        
+        .platform-btn.selected {
+            border-color: var(--accent-primary);
+            background: var(--bg-secondary);
+        }
+        
+        .composer-textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+        
+        .composer-textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        
+        .emoji-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+        }
+        
+        .emoji-btn {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: transform 0.2s;
+        }
+        
+        .emoji-btn:hover {
+            transform: scale(1.2);
+        }
+        
+        .media-dropzone {
+            margin-top: 1rem;
+            padding: 2rem;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .media-dropzone:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-tertiary);
+        }
+        
+        .mockup-container {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        
+        .mockup-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .mockup-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), #a371f7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+        
+        .mockup-user-info {
+            flex: 1;
+        }
+        
+        .mockup-display-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        .mockup-username {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .mockup-text-content {
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+        
+        .preview-text-content {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        .status-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        
+        .status-badge.valid {
+            background: var(--success);
+            color: var(--bg-primary);
+        }
+        
+        .status-badge.invalid {
+            background: var(--error);
+            color: white;
+        }
+        
+        .publish-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--accent-primary), #1f6feb);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .publish-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3);
+        }
+        
+        .publish-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    <div id="root"></div>
     
-    const PLATFORMS = {
-      twitter: { id: 'twitter', name: 'Twitter', color: '#1da1f2', charLimit: 280, maxMedia: 4, warnLimit: 260 },
-      instagram: { id: 'instagram', name: 'Instagram', color: '#e4405f', charLimit: 2200, maxMedia: 10, warnLimit: 2000, mediaRequired: true },
-      linkedin: { id: 'linkedin', name: 'LinkedIn', color: '#0077b5', charLimit: 3000, maxMedia: 9, warnLimit: 2800 },
-      facebook: { id: 'facebook', name: 'Facebook', color: '#1877f2', charLimit: 63206, maxMedia: 10, warnLimit: 5000 }
-    };
-    
-    function validatePost(text, mediaFiles, platform) {
-      const config = PLATFORMS[platform];
-      const errors = [], warnings = [];
-      const charCount = text.length, mediaCount = mediaFiles.length;
-      const hashtags = (text.match(/#\w+/g) || []);
-      
-      if (charCount > config.charLimit) errors.push(`Character limit exceeded (${charCount}/${config.charLimit})`);
-      if (mediaCount > config.maxMedia) errors.push(`Too many media files (${mediaCount}/${config.maxMedia})`);
-      if (config.mediaRequired && mediaCount === 0) errors.push('At least one media file is required');
-      if (charCount >= config.warnLimit && charCount <= config.charLimit) warnings.push('Approaching character limit');
-      
-      return { isValid: errors.length === 0, errors, warnings, charCount, mediaCount, charLimit: config.charLimit, maxMedia: config.maxMedia };
-    }
-    
-    function Composer({ text, setText }) {
-      const insertEmoji = (emoji) => setText(prev => prev + emoji);
-      const commonEmojis = ['😊', '❤️', '🔥', '👍', '🎉', '✨', '🚀', '💡'];
-      
-      return (
-        <div className="panel">
-          <h3 className="section-title">Compose Post</h3>
-          <textarea 
-            value={text} 
-            onChange={(e) => setText(e.target.value)} 
-            placeholder="What would you like to share?" 
-            className="composer-textarea" 
-            rows="6" 
-          />
-          <div className="emoji-bar">
-            <span>😀</span>
-            <div className="emoji-list">
-              {commonEmojis.map(emoji => (
-                <button key={emoji} onClick={() => insertEmoji(emoji)} className="emoji-btn">{emoji}</button>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-    }
-    
-    function PlatformSelector({ selectedPlatforms, togglePlatform, validationResults }) {
-      return (
-        <div className="panel">
-          <h3 className="section-title">Publish to</h3>
-          <div className="platforms-grid">
-            {Object.values(PLATFORMS).map(platform => {
-              const isSelected = selectedPlatforms.includes(platform.id);
-              const validation = validationResults[platform.id];
-              let statusIcon = '';
-              if (isSelected && validation) {
-                statusIcon = validation.isValid ? '✓' : '✗';
-              }
-              
-              return (
-                <button
-                  key={platform.id}
-                  onClick={() => togglePlatform(platform.id)}
-                  className={`platform-btn ${isSelected ? 'selected' : ''}`}
-                  style={{ '--platform-color': platform.color }}
-                >
-                  <div className="platform-name">{platform.name}</div>
-                  {isSelected && <span className="status-badge">{statusIcon}</span>}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-    
-    function PreviewPanel({ selectedPlatforms, text }) {
-      if (selectedPlatforms.length === 0) {
-        return (
-          <div className="panel empty-state">
-            <h3>🌐 Live Preview</h3>
-            <p>Select platforms to see how your post will render</p>
-          </div>
-        );
-      }
-      
-      const renderFormattedText = (text) => {
-        if (!text) return <p style={{color: 'var(--text-secondary)'}}>Write some content...</p>;
-        const parts = text.split(/(#\w+)/g);
-        return <p className="preview-text-content">{parts.map((part, i) => part.match(/#\w+/) ? <span key={i} className="preview-hashtag">{part}</span> : part)}</p>;
-      };
-      
-      return (
-        <div className="panel">
-          <h3 className="section-title">Live Preview</h3>
-          {selectedPlatforms.map(platformId => {
-            const config = PLATFORMS[platformId];
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [text, setText] = useState('');
+            const [selectedPlatforms, setSelectedPlatforms] = useState(['twitter']);
+            const [mediaFiles, setMediaFiles] = useState([]);
+
+            const platforms = [
+                { id: 'twitter', name: 'Twitter / X', limit: 280, mediaLimit: 4 },
+                { id: 'instagram', name: 'Instagram', limit: 2200, mediaLimit: 10 },
+                { id: 'linkedin', name: 'LinkedIn', limit: 3000, mediaLimit: 9 },
+                { id: 'facebook', name: 'Facebook', limit: 63206, mediaLimit: 10 }
+            ];
+
+            const emojis = ['😊', '🚀', '🔥', '✨', '💻', '💡', '📢', '👀', '🎉', '🙌'];
+
+            const togglePlatform = (platformId) => {
+                setSelectedPlatforms(prev =>
+                    prev.includes(platformId)
+                        ? prev.filter(id => id !== platformId)
+                        : [...prev, platformId]
+                );
+            };
+
+            const addEmoji = (emoji) => {
+                setText(prev => prev + emoji);
+            };
+
+            const validatePost = (platform) => {
+                const charCount = text.length;
+                const hasContent = text.trim().length > 0 || mediaFiles.length > 0;
+                const withinLimit = charCount <= platform.limit;
+                return hasContent && withinLimit;
+            };
+
+            const activePlatform = platforms.find(p => p.id === selectedPlatforms[0]) || platforms[0];
+            const charCount = text.length;
+            const isValid = validatePost(activePlatform);
+
             return (
-              <div key={platformId} className="mockup-container">
-                <div className="mockup-header">
-                  <div className="mockup-avatar">P</div>
-                  <div className="mockup-user-info">
-                    <div className="mockup-display-name">Post Composer</div>
-                    <div className="mockup-username">@composer · Now</div>
-                  </div>
-                  <span>⋯</span>
+                <div className="app-container">
+                    <div className="app-header">
+                        <h1 className="app-title">OmniPost Composer</h1>
+                        <p className="app-subtitle">Compose, validate, and preview multi-platform posts in real-time</p>
+                    </div>
+
+                    <div className="main-grid">
+                        <div>
+                            <div className="panel">
+                                <h2 className="section-title">PUBLISH TO:</h2>
+                                <div className="platforms-grid">
+                                    {platforms.map(platform => (
+                                        <button
+                                            key={platform.id}
+                                            className={`platform-btn ${selectedPlatforms.includes(platform.id) ? 'selected' : ''}`}
+                                            onClick={() => togglePlatform(platform.id)}
+                                        >
+                                            {selectedPlatforms.includes(platform.id) && (
+                                                <span className="status-badge valid">✓</span>
+                                            )}
+                                            {platform.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="panel">
+                                <h2 className="section-title">COMPOSE POST</h2>
+                                <div style={{marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem'}}>
+                                    Active Platform: <strong style={{color: 'var(--accent-primary)'}}>{activePlatform.name}</strong>
+                                </div>
+                                <textarea
+                                    className="composer-textarea"
+                                    placeholder="What would you like to share? Add text, links, and hashtags..."
+                                    value={text}
+                                    onChange={(e) => setText(e.target.value)}
+                                />
+                                <div className="emoji-bar">
+                                    {emojis.map((emoji, idx) => (
+                                        <button
+                                            key={idx}
+                                            className="emoji-btn"
+                                            onClick={() => addEmoji(emoji)}
+                                        >
+                                            {emoji}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="media-dropzone">
+                                    <div style={{fontSize: '2rem', marginBottom: '0.5rem'}}>☁️</div>
+                                    <div>Drag & drop media or <span style={{color: 'var(--accent-primary)', fontWeight: '600'}}>browse files</span></div>
+                                    <div style={{fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem'}}>Supports images and videos</div>
+                                </div>
+                            </div>
+
+                            <div className="panel">
+                                <h2 className="section-title">VALIDATION DETAILS</h2>
+                                <div style={{marginBottom: '1rem'}}>
+                                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem'}}>
+                                        <strong>{activePlatform.name}</strong>
+                                        <span className={isValid ? '' : ''} style={{color: isValid ? 'var(--success)' : 'var(--error)', fontWeight: '600'}}>
+                                            {isValid ? 'Valid' : 'Invalid'}
+                                        </span>
+                                    </div>
+                                    <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)'}}>
+                                        <span>Characters</span>
+                                        <span style={{color: charCount > activePlatform.limit ? 'var(--error)' : 'var(--text-primary)'}}>
+                                            {charCount} / {activePlatform.limit}
+                                        </span>
+                                    </div>
+                                    <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.25rem'}}>
+                                        <span>Media Attached:</span>
+                                        <span>{mediaFiles.length} / {activePlatform.mediaLimit}</span>
+                                    </div>
+                                </div>
+                                {!isValid && (
+                                    <div style={{padding: '0.75rem', background: 'rgba(248, 81, 73, 0.1)', border: '1px solid var(--error)', borderRadius: '6px', fontSize: '0.9rem', color: 'var(--error)'}}>
+                                        {text.trim().length === 0 && mediaFiles.length === 0
+                                            ? 'Post content cannot be empty (add text or attach media).'
+                                            : 'Character limit exceeded.'}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="panel">
+                                <h2 className="section-title">LIVE PREVIEW</h2>
+                                <div style={{marginBottom: '1rem'}}>
+                                    <button style={{padding: '0.5rem 1rem', background: 'transparent', border: '2px solid var(--accent-primary)', borderRadius: '6px', color: 'var(--accent-primary)', cursor: 'pointer', fontWeight: '600'}}>
+                                        {activePlatform.name.split(' ')[0]}
+                                    </button>
+                                </div>
+                                <div className="mockup-container">
+                                    <div className="mockup-header">
+                                        <div className="mockup-avatar">P</div>
+                                        <div className="mockup-user-info">
+                                            <div className="mockup-display-name">Post Composer Pro</div>
+                                            <div className="mockup-username">@postcomposer · Just now</div>
+                                        </div>
+                                        <div>⋯</div>
+                                    </div>
+                                    {text ? (
+                                        <div className="mockup-text-content">{text}</div>
+                                    ) : (
+                                        <div className="preview-text-content">Write some content to see a live simulation...</div>
+                                    )}
+                                    <div style={{display: 'flex', gap: '2rem', color: 'var(--text-secondary)', fontSize: '0.9rem'}}>
+                                        <span>💬 0</span>
+                                        <span>🔁 0</span>
+                                        <span>❤️ 0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button className="publish-btn" disabled={!isValid}>
+                                🚀 Publish Post
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div>{renderFormattedText(text)}</div>
-                <div className="mockup-actions">
-                  <button className="action-btn">💬 0</button>
-                  <button className="action-btn">🔄 0</button>
-                  <button className="action-btn">❤️ 0</button>
-                  <button className="action-btn">📤</button>
-                </div>
-              </div>
             );
-          })}
-        </div>
-      );
-    }
-    
-    function ValidationFeedback({ selectedPlatforms, validationResults }) {
-      if (selectedPlatforms.length === 0) {
-        return (
-          <div className="panel empty-state">
-            <p>ℹ️ Select platforms to view validation</p>
-          </div>
-        );
-      }
-      
-      return (
-        <div className="panel">
-          <h3 className="section-title">Validation Details</h3>
-          {selectedPlatforms.map(platformId => {
-            const config = PLATFORMS[platformId];
-            const result = validationResults[platformId];
-            if (!result) return null;
-            
-            const { isValid, errors, warnings, charCount, mediaCount, charLimit, maxMedia } = result;
-            const isOverLimit = charCount > charLimit;
-            const isNearLimit = charCount >= config.warnLimit && charCount <= charLimit;
-            
-            return (
-              <div key={platformId} className={`validation-card ${isValid ? 'valid' : 'invalid'}`}>
-                <span className="platform-pill" style={{backgroundColor: config.color}}>{config.name}</span>
-                <div>
-                  <div>
-                    <span>Characters: </span>
-                    <span className={`metric-count ${isOverLimit ? 'over' : isNearLimit ? 'near' : ''}`}>
-                      {charCount} / {charLimit}
-                    </span>
-                  </div>
-                  <div><span>Media: {mediaCount} / {maxMedia}</span></div>
-                </div>
-                {(errors.length > 0 || warnings.length > 0) && (
-                  <div style={{marginTop: '0.75rem'}}>
-                    {errors.map((err, idx) => <div key={`err-${idx}`} style={{color: 'var(--error-color)', fontSize: '0.85rem'}}>✗ {err}</div>)}
-                    {warnings.map((warn, idx) => <div key={`warn-${idx}`} style={{color: 'var(--warning-color)', fontSize: '0.85rem'}}>⚠ {warn}</div>)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-    
-    function App() {
-      const [text, setText] = useState('');
-      const [mediaFiles, setMediaFiles] = useState([]);
-      const [selectedPlatforms, setSelectedPlatforms] = useState([]);
-      const [validationResults, setValidationResults] = useState({});
-      
-      useEffect(() => {
-        const results = {};
-        selectedPlatforms.forEach(platformId => {
-          results[platformId] = validatePost(text, mediaFiles, platformId);
-        });
-        setValidationResults(results);
-      }, [text, mediaFiles, selectedPlatforms]);
-      
-      const togglePlatform = (platformId) => {
-        setSelectedPlatforms(prev => 
-          prev.includes(platformId) ? prev.filter(id => id !== platformId) : [...prev, platformId]
-        );
-      };
-      
-      return (
-        <div className="app-container">
-          <div className="app-header">
-            <h1 className="app-title">Social Media Post Composer</h1>
-            <p className="app-subtitle">Create, preview, and validate posts across multiple platforms</p>
-          </div>
-          <div className="main-grid">
-            <div>
-              <Composer text={text} setText={setText} />
-              <PlatformSelector 
-                selectedPlatforms={selectedPlatforms} 
-                togglePlatform={togglePlatform}
-                validationResults={validationResults}
-              />
-              <ValidationFeedback 
-                selectedPlatforms={selectedPlatforms} 
-                validationResults={validationResults} 
-              />
-            </div>
-            <div>
-              <PreviewPanel selectedPlatforms={selectedPlatforms} text={text} />
-            </div>
-          </div>
-        </div>
-      );
-    }
-    
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
